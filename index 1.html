@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professor Recommendation System</title>
+    <style>
+        /* Set the basic styles for body and containers */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Upper half with background image */
+        .upper-half {
+            width: 100%;
+            height: 40vh;
+            /* background-color: rgb(80, 117, 24); Correct usage */
+            background-size: cover;
+            background: linear-gradient(135deg, #f0f0f0  25%, #d0d0d0 25%, #d0d0d0 50%, #f0f0f0 50%, #f0f0f0 75%, #d0d0d0 75%, #d0d0d0);
+            background-position: center; /* Center the image */
+            position: relative;
+           
+        }
+
+        /* Container with form */
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: -50px; /* Slight overlap with upper half */
+            z-index: 1;
+        }
+
+        /* Title styles */
+        h2 {
+            color: #333;
+            text-align: center;
+        }
+
+        /* Form label and input styling */
+        label {
+            display: block;
+            margin-top: 15px;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+
+        /* Submit button styling */
+        input[type="submit"] {
+            background-color: #5A67D8;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        input[type="submit"]:hover {
+            background-color: #434190;
+        }
+
+        /* Result table styling */
+        .results {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9fafb;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            display: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            font-size: 14px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background-color: #5A67D8;
+            color: white;
+        }
+        p {
+            font-size: 12px;
+            text-align: center;
+        }
+
+        /* Error message styling */
+        .error-message {
+            color: red;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Upper half with background image -->
+    <div class="upper-half"></div>
+
+    <!-- Main container for form and results -->
+    <div class="container">
+        <h2>Professor Recommendation System</h2>
+        <form id="recommendationForm">
+            <label for="description">Enter your interests:</label>
+            <input type="text" id="description" placeholder="E.g., 'Interested in AI & healthcare applications'">
+
+            <label for="subjectCode">Subject Code:</label>
+            <input type="text" id="subjectCode" placeholder="E.g., 'INFO 5501'">
+
+            <input type="submit" value="Recommend Professor">
+        </form>           
+
+        <!-- Table to display recommendations -->
+        <div class="results" id="results">
+            <table id="professorTable">
+                <thead>
+                    <tr>
+                        <th>Professor Name</th>
+                        <th>Course</th>
+                        <th>SFI</th>
+                        <th>PEI</th>
+                    </tr>
+                </thead>
+                <tbody id="professorList">
+                    <!-- Rows will be inserted here dynamically -->
+                </tbody>
+            </table>
+            <p>SFI: Student Feedback Index</p>
+            <p>PEI: Professor Engagement Index</p>
+        </div>
+        <div class="error-message" id="errorMessage"></div>
+    </div>
+
+    <script>
+        document.getElementById("recommendationForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const description = document.getElementById("description").value;
+            const subjectCode = document.getElementById("subjectCode").value;
+            const errorMessage = document.getElementById("errorMessage");
+            errorMessage.textContent = "";  // Clear previous error message
+
+            fetch("/recommend", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ description: description, subjectCode: subjectCode }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultsDiv = document.getElementById("results");
+                const professorList = document.getElementById("professorList");
+                professorList.innerHTML = ""; // Clear previous results
+
+                if (data.recommendations && data.recommendations.length > 0) {
+                    data.recommendations.forEach(professor => {
+                        const row = document.createElement("tr");
+
+                        row.innerHTML = `
+                            <td>${professor.name}</td>
+                            <td>${professor.course}</td>
+                            <td>${professor.SFI.toFixed(2)}</td>
+                            <td>${professor.PEI.toFixed(2)}</td>
+                        `;
+                        professorList.appendChild(row);
+                    });
+                    resultsDiv.style.display = "block";
+                } else {
+                    professorList.innerHTML = "<tr><td colspan='4'>No recommendations found. Please try a different input.</td></tr>";
+                    resultsDiv.style.display = "block";
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching recommendations:", error);
+                errorMessage.textContent = "An error occurred while fetching recommendations. Please try again later.";
+            });
+        });
+    </script>
+</body>
+</html>
